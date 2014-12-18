@@ -7,8 +7,6 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  */
 
-//require_once realpath(dirname(__FILE__)) . '../classes/VerbalExpressions.php';
-
 class IssnFinderJob extends Erfurt_Worker_Job_Abstract
 {
 
@@ -34,10 +32,12 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
             $this->logSuccess('nr of proceeded issn: ' . count($looseIssn) . ' of ' . count($arrayOfIssn));
         }
         curl_close($this->curl);
+        $objectCache            = $this->_erfurt->getCache();
+        $objectCache->clean();
     }
 
     /*
-     * Retrieve all ISSN that
+     * Retrieve all ISSN that are contract items, have an
      */
     private function getIssn()
     {
@@ -52,7 +52,7 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
                 #FILTER (NOT EXISTS {
                 #    ?issn umbel:isLike ?zdb .
                 #})
-            } LIMIT 10';
+            }';
 
         //query selected model
         $result = $this->model->sparqlQuery($sparql);
@@ -77,10 +77,14 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
             if (empty($result)) {
                 $this->logSuccess("issn: " . $issn);
                 $answer = $this->askIssnResolver(substr($issn, -9));
-                $this->_import($answer);
-                $return[] = $issn;
+                if (strpos($answer, '404 / ISSN not found') === false) {
+                    $this->_import($answer);
+                    $return[] = $issn;
+                } else {
+                    $this->logSuccess('ISSN-Resolver: ISSN not found');
+                }
             } else {
-                $this->logSuccess('result not empty, resource already imported: ' . print_r($result, true));
+                $this->logSuccess('result not empty, resource already imported');
             }
         }
 
@@ -124,15 +128,11 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
 
             $locator = Erfurt_Syntax_RdfParser::LOCATOR_DATASTRING;
             $filetype = 'ttl';
-            $this->logSuccess('trying to import modelIRI ' . $this->modelIri . ' and data: ' . $dataWithBase);
+            $this->logSuccess('trying to import into modelIRI ' . $this->modelIri);
             $this->_erfurt->getStore()->importRdf($this->modelIri, $data, $filetype, $locator);
             $this->logSuccess('finished importing');
             // stopping versioning action
             $versioning->endAction();
-
-            // Trigger Reindex
-//            $indexEvent = new Erfurt_Event('onFullreindexAction');
-//            $indexEvent->trigger();
 
         } catch (Erfurt_Exception $e) {
             // re-throw
