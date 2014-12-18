@@ -1,4 +1,6 @@
-linkfinder.ontowiki
+jobcenter.ontowiki
 ===================
 
-An OntoWiki extension that asynchronously finds missing links between loose resources.
+An OntoWiki extension that contains a collection of gearman jobs.
+
+* IssnFinderJob: asynchronously find missing links between loose resources.
