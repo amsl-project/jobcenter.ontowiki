@@ -17,6 +17,7 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
 
     public function run($data)
     {
+        OntoWiki::getInstance()->getCustomLogger("halp");
         $this->logSuccess('preparing to start IssnFinderJob: ' . print_r($data, true));
         $this->curl = curl_init();
         $this->_erfurt = Erfurt_App::getInstance();
@@ -25,7 +26,9 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
         } else {
             $this->modelIri = $data->modelIri;
             $this->logSuccess('IssnFinderJob started with Model IRI ' . $data->modelIri);
-            $this->model = new Erfurt_Owl_Model($data->modelIri);
+//            $this->model = new Erfurt_Owl_Model($data->modelIri);
+            $this->model = Erfurt_App::getInstance()->getStore();
+//            $this->logSuccess('$store: '. print_r($this->model));
             $arrayOfIssn = $this->getIssn();
             $this->logSuccess("nr of found issn: " . count($arrayOfIssn));
             $looseIssn = $this->extractLooseIssn($arrayOfIssn);
@@ -41,21 +44,21 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
      */
     private function getIssn()
     {
-        $sparql = '
-            prefix bibrm: <http://vocab.ub.uni-leipzig.de/bibrm/>
-            prefix umbel: <http://umbel.org/umbel#>
-            SELECT ?issn WHERE {
-                ?s a bibrm:ContractItem .
-                ?s ?p ?issn .
-                FILTER(regex(?p, "issn"))
-                FILTER(regex(?issn, "urn:(issn|ISSN)"))
-                #FILTER (NOT EXISTS {
-                #    ?issn umbel:isLike ?zdb .
-                #})
-            }';
+        $sparql = 'prefix amsl: <http://vocab.ub.uni-leipzig.de/amsl/> ' . PHP_EOL;
+        $sparql .= 'prefix umbel: <http://umbel.org/umbel#> '. PHP_EOL;
+        $sparql .= 'SELECT ?s '. PHP_EOL;
+//        $sparql .= 'FROM <http://demo.amsl.technology/sample-data/erm1/> '. PHP_EOL;
+        $sparql .= 'WHERE { '. PHP_EOL;
+        $sparql .= '?s a amsl:ContractItem . '. PHP_EOL;
+//            #?s ?p ?issn .
+//            #FILTER(regex(?p, "issn"))
+//            #FILTER(regex(?issn, "urn:(issn|ISSN)"))
+        $sparql .= '} '. PHP_EOL;
 
         //query selected model
+        $this->logSuccess('querying ' . $sparql);
         $result = $this->model->sparqlQuery($sparql);
+        $this->logSuccess('result:  ' . print_r($result, true));
         return $result;
     }
 

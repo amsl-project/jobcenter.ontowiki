@@ -17,7 +17,7 @@
   #owconfig:defaultAction "view" ;
   #owconfig:pluginEvent event:onQueryHistory ;
   owconfig:pluginEvent event:onAnnounceWorker ;
-  rdfs:label "Linkfinder" ;
+  rdfs:label "Jobcenter" ;
   doap:description "An OntoWiki extension that contains a collection of gearman jobs." ;
   owconfig:authorLabel "amsl-project" ;
   doap:maintainer <http://amsl.technology> ;

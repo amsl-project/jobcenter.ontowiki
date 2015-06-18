@@ -6,13 +6,13 @@
  * @copyright Copyright (c) 2014, {@link http://aksw.org AKSW}
  * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  */
-class LinkfinderPlugin extends OntoWiki_Plugin
+class JobcenterPlugin extends OntoWiki_Plugin
 {
     public function onAnnounceWorker($event)
     {
         $event->registry->registerJob(
             "IssnFinderJob",                                    //  job key name
-            "extensions/linkfinder/jobs/IssnFinderJob.php",       //  job class file
+            "extensions/jobcenter/jobs/IssnFinderJob.php",       //  job class file
             "IssnFinderJob"                        //  job class name
         );
     }
