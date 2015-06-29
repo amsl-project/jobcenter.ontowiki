@@ -7,32 +7,33 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  */
 
-class IssnFinderJob extends Erfurt_Worker_Job_Abstract
+class IssnFinderJob
 {
 
     private $curl;
     private $modelIri;
-    private $model;
+    private $store;
     private $_erfurt;
+    private $logger;
 
     public function run($data)
     {
-        OntoWiki::getInstance()->getCustomLogger("halp");
-        $this->logSuccess('preparing to start IssnFinderJob: ' . print_r($data, true));
+        $this->logger = OntoWiki::getInstance()->getCustomLogger("jobcenter-issnfinderjob");
+        $owApp       = OntoWiki::getInstance();
+        $this->store = $owApp->erfurt->getStore();
+        $this->logger->debug('preparing to start IssnFinderJob: ' . print_r($data, true));
+        $this->logger->debug('ModelIri: ' . $data['modelIri']);
         $this->curl = curl_init();
         $this->_erfurt = Erfurt_App::getInstance();
-        if (empty($data->modelIri)) {
-            $this->logSuccess('started (without workload)');
+        if (empty($data['modelIri'])) {
+            $this->logger->debug('started (without workload)');
         } else {
-            $this->modelIri = $data->modelIri;
-            $this->logSuccess('IssnFinderJob started with Model IRI ' . $data->modelIri);
-//            $this->model = new Erfurt_Owl_Model($data->modelIri);
-            $this->model = Erfurt_App::getInstance()->getStore();
-//            $this->logSuccess('$store: '. print_r($this->model));
+            $this->modelIri = $data['modelIri'];
+            $this->logger->debug('IssnFinderJob started with Model IRI ' . $data->modelIri);
             $arrayOfIssn = $this->getIssn();
-            $this->logSuccess("nr of found issn: " . count($arrayOfIssn));
+            $this->logger->debug("nr of found issn: " . count($arrayOfIssn));
             $looseIssn = $this->extractLooseIssn($arrayOfIssn);
-            $this->logSuccess('nr of proceeded issn: ' . count($looseIssn) . ' of ' . count($arrayOfIssn));
+            $this->logger->debug('nr of proceeded issn: ' . count($looseIssn) . ' of ' . count($arrayOfIssn));
         }
         curl_close($this->curl);
         $objectCache            = $this->_erfurt->getCache();
@@ -44,21 +45,25 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
      */
     private function getIssn()
     {
-        $sparql = 'prefix amsl: <http://vocab.ub.uni-leipzig.de/amsl/> ' . PHP_EOL;
-        $sparql .= 'prefix umbel: <http://umbel.org/umbel#> '. PHP_EOL;
-        $sparql .= 'SELECT ?s '. PHP_EOL;
-//        $sparql .= 'FROM <http://demo.amsl.technology/sample-data/erm1/> '. PHP_EOL;
-        $sparql .= 'WHERE { '. PHP_EOL;
-        $sparql .= '?s a amsl:ContractItem . '. PHP_EOL;
-//            #?s ?p ?issn .
-//            #FILTER(regex(?p, "issn"))
-//            #FILTER(regex(?issn, "urn:(issn|ISSN)"))
-        $sparql .= '} '. PHP_EOL;
+        $sparql = '
+        prefix amsl: <http://vocab.ub.uni-leipzig.de/amsl/>
+        prefix umbel: <http://umbel.org/umbel#>
+        prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        prefix foaf: <http://xmlns.com/foaf/0.1/>
+        SELECT ?issn
+        WHERE {
+            ?s a amsl:ContractItem .
+            ?s ?p ?issn .
+            FILTER(regex(?p, "issn"))
+            FILTER(regex(?issn, "urn:(issn|ISSN)"))
+        }';
 
         //query selected model
-        $this->logSuccess('querying ' . $sparql);
-        $result = $this->model->sparqlQuery($sparql);
-        $this->logSuccess('result:  ' . print_r($result, true));
+        $this->logger->debug('querying ' . $sparql);
+
+        //disable AC to be able to access graphs that would require login
+        $result = $this->store->sparqlQuery($sparql, array(Erfurt_Store::USE_AC => false));
+//        $this->logSuccess('result:  ' . print_r($result, true));
         return $result;
     }
 
@@ -74,20 +79,20 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
             SELECT ?zdb WHERE {
                 <$issn> umbel:isLike ?zdb .
             }";
-            $result = $this->model->sparqlQuery($sparql);
+            $result = $this->store->sparqlQuery($sparql);
 
             // if ask query returns nothing, its result is false (OntoWiki specific)
             if (empty($result)) {
-                $this->logSuccess("issn: " . $issn);
+                $this->logger->debug("issn: " . $issn);
                 $answer = $this->askIssnResolver(substr($issn, -9));
                 if (strpos($answer, '404 / ISSN not found') === false) {
                     $this->_import($answer);
                     $return[] = $issn;
                 } else {
-                    $this->logSuccess('ISSN-Resolver: ISSN not found');
+                    $this->logger->debug('ISSN-Resolver: ISSN not found');
                 }
             } else {
-                $this->logSuccess('result not empty, resource already imported');
+                $this->logger->debug('result not empty, resource already imported');
             }
         }
 
@@ -98,7 +103,7 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
     private function askIssnResolver($issn)
     {
         $url = "http://data.ub.uni-leipzig.de/zdb/issn/$issn";
-        $this->logSuccess('asking issn resolver for: ' . $issn);
+        $this->logger->debug('asking issn resolver for: ' . $issn);
 
         curl_setopt($this->curl, CURLOPT_URL, $url);
         curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'GET');
@@ -130,10 +135,13 @@ class IssnFinderJob extends Erfurt_Worker_Job_Abstract
             $versioning->startAction($actionSpec);
 
             $locator = Erfurt_Syntax_RdfParser::LOCATOR_DATASTRING;
-            $filetype = 'ttl';
-            $this->logSuccess('trying to import into modelIRI ' . $this->modelIri);
-            $this->_erfurt->getStore()->importRdf($this->modelIri, $data, $filetype, $locator);
-            $this->logSuccess('finished importing');
+
+            // parse the response from the issn resolver
+            $filetype = 'n3';
+
+            $this->logger->debug('trying to import into modelIRI ' . $this->modelIri . ": " . $dataWithBase);
+            $this->_erfurt->getStore()->importRdf($this->modelIri, $dataWithBase, $filetype, $locator);
+            $this->logger->debug('finished importing');
             // stopping versioning action
             $versioning->endAction();
 

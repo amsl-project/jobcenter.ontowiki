@@ -14,7 +14,7 @@
   owconfig:enabled "false"^^xsd:boolean ;
   owconfig:templates "templates" ;
   #owconfig:languages "languages/" ;
-  #owconfig:defaultAction "view" ;
+  #owconfig:defaultAction "linkfinder" ;
   #owconfig:pluginEvent event:onQueryHistory ;
   owconfig:pluginEvent event:onAnnounceWorker ;
   rdfs:label "Jobcenter" ;
