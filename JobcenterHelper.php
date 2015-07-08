@@ -14,7 +14,7 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
  */
 
-class JobcenterHelper {
+class JobcenterHelper extends OntoWiki_Component_Helper{
     /**
      * The module view
      *
@@ -39,5 +39,8 @@ class JobcenterHelper {
             $extrasMenu = OntoWiki_Menu_Registry::getInstance()->getMenu('application')->getSubMenu('Extras');
             $extrasMenu->setEntry('JobCenter', $owApp->config->urlBase . 'jobcenter/view');
         }
+
+        $this->view->headScript()->appendFile($this->_config->urlBase . 'extensions/jobcenter/templates/jobcenter/js/linkfinder.js');
+
     }
 }

@@ -13,22 +13,23 @@ class JobcenterController extends OntoWiki_Controller_Component
 {
     public function linkfinderAction()
     {
-        $_owApp = OntoWiki::getInstance();
-        $modelIri = $this->_owApp->selectedModel->getModelIri();
-        $logger = $_owApp->getCustomLogger("jobcenter");
-        $logger->debug('$modelIri: ' . $modelIri);
-
-        $result = 'here goes the result';
-        $this->view->result = $result;
-
-
-        $issnFinder = new IssnFinderJob();
-        $issnFinder->run(array('modelIri' => "http://demo.amsl.technology/sample-data/erm1/"));
-
-        $translate = $this->_owApp->translate;
-        $this->view->placeholder('main.window.title')->set($translate->_('Jobcenter - Linkfinder'));
-        $this->addModuleContext('main.window.linkfinder');
-        $_owApp->getNavigation()->disableNavigation();
+//        $_owApp = OntoWiki::getInstance();
+//        $modelIri = $this->_owApp->selectedModel->getModelIri();
+//        $logger = $_owApp->getCustomLogger("jobcenter");
+//        $logger->debug('$modelIri: ' . $modelIri);
+//
+//        $result = 'here goes the result';
+//        $this->view->result = $result;
+//
+//
+//        $issnFinder = new IssnFinderJob();
+//        $listOfIssn = $issnFinder->getIssn();
+//
+//        $this->view->listOfIssn = $listOfIssn;
+//        $translate = $this->_owApp->translate;
+//        $this->view->placeholder('main.window.title')->set($translate->_('Jobcenter - Linkfinder'));
+//        $this->addModuleContext('main.window.linkfinder');
+//        $_owApp->getNavigation()->disableNavigation();
 
     }
 

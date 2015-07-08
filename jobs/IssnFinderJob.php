@@ -16,15 +16,22 @@ class IssnFinderJob
     private $_erfurt;
     private $logger;
 
-    public function run($data)
+    function __construct()
     {
         $this->logger = OntoWiki::getInstance()->getCustomLogger("jobcenter-issnfinderjob");
         $owApp       = OntoWiki::getInstance();
         $this->store = $owApp->erfurt->getStore();
+        $this->_erfurt = Erfurt_App::getInstance();
+    }
+
+    /**
+     * Basically mimics the LinkedDataGatherer functionality. Not used atm.
+     */
+    public function run($data)
+    {
         $this->logger->debug('preparing to start IssnFinderJob: ' . print_r($data, true));
         $this->logger->debug('ModelIri: ' . $data['modelIri']);
         $this->curl = curl_init();
-        $this->_erfurt = Erfurt_App::getInstance();
         if (empty($data['modelIri'])) {
             $this->logger->debug('started (without workload)');
         } else {
@@ -43,7 +50,7 @@ class IssnFinderJob
     /*
      * Retrieve all ISSN that are contract items, have an
      */
-    private function getIssn()
+    public function getIssn()
     {
         $sparql = '
         prefix amsl: <http://vocab.ub.uni-leipzig.de/amsl/>
@@ -61,8 +68,9 @@ class IssnFinderJob
         //query selected model
         $this->logger->debug('querying ' . $sparql);
 
-        //disable AC to be able to access graphs that would require login
-        $result = $this->store->sparqlQuery($sparql, array(Erfurt_Store::USE_AC => false));
+        //disable AC to be able to access graphs that would require login (was needed for the usage as gearman job)
+//        $result = $this->store->sparqlQuery($sparql, array(Erfurt_Store::USE_AC => false));
+        $result = $this->store->sparqlQuery($sparql);
 //        $this->logSuccess('result:  ' . print_r($result, true));
         return $result;
     }
@@ -127,8 +135,8 @@ class IssnFinderJob
 
         // since the importer has problems with urn:issn:xxxx-xxxx uris,
         // we have to define the base as urn:issn:
-        $dataWithBase = '@base <urn:ISSN:> . ';
-        $dataWithBase .= $data;
+//        $dataWithBase = '@base <urn:ISSN:> . ';
+//        $dataWithBase .= $data;
 
         try {
             // starting versioning action
@@ -139,8 +147,8 @@ class IssnFinderJob
             // parse the response from the issn resolver
             $filetype = 'n3';
 
-            $this->logger->debug('trying to import into modelIRI ' . $this->modelIri . ": " . $dataWithBase);
-            $this->_erfurt->getStore()->importRdf($this->modelIri, $dataWithBase, $filetype, $locator);
+            $this->logger->debug('trying to import into modelIRI ' . $this->modelIri . ": " . $data);
+            $this->_erfurt->getStore()->importRdf($this->modelIri, $data, $filetype, $locator);
             $this->logger->debug('finished importing');
             // stopping versioning action
             $versioning->endAction();
