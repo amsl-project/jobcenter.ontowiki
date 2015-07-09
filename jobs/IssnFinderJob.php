@@ -57,7 +57,7 @@ class IssnFinderJob
         prefix umbel: <http://umbel.org/umbel#>
         prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         prefix foaf: <http://xmlns.com/foaf/0.1/>
-        SELECT ?issn
+        SELECT DISTINCT ?issn
         WHERE {
             ?s a amsl:ContractItem .
             ?s ?p ?issn .

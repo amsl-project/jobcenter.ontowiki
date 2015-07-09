@@ -1,14 +1,15 @@
 <h1>ISSN Finder.</h1>
 <h3>This job finds all ISSN and calls the LinkedDataWrapper for each of them.</h3>
-<p>Nr of ISSN:
-<!--    --><?php //echo print_r(count($this->listOfIssn), true) ?>
-</p>
-
 <p>
-    <a class="button" id="issnfinder-button">Start</a>
+	<a class="button" id="issnfinder-button">Start</a>
+	<a class="button" id="issnfinder-button-stop">Stop</a>
+	Done: <span id="issnfinder-button-span">0</span> of <?php echo print_r(count($this->listOfIssn), true) ?> (<span id="issnfinder-new-count">0</span> new)
 </p>
-
+<div id="tail-container">
+	<div id="tail">
+	</div>
+</div>
 <script type="text/javascript">
 <!--encode the list of issn to a json element to make it usable via jQuery-->
-//var listOfIssn = <?php //echo json_encode($this->listOfIssn); ?>//;
+var listOfIssn = <?php echo json_encode($this->listOfIssn); ?>;
 </script>

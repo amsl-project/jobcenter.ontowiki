@@ -11,7 +11,7 @@
 :jobcenter a doap:Project ;
   doap:name "jobcenter" ;
   owconfig:privateNamespace <https://github.com/amsl-project/jobcenter.ontowiki/raw/master/doap.n3#> ;
-  owconfig:enabled "false"^^xsd:boolean ;
+  owconfig:enabled "true"^^xsd:boolean ;
   owconfig:templates "templates" ;
   #owconfig:languages "languages/" ;
   #owconfig:defaultAction "linkfinder" ;

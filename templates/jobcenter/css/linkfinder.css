@@ -1,0 +1,15 @@
+#issnfinder-button-stop {
+	display: none;
+}
+
+#tail-container {
+	height: 350px;
+    width: 100%;
+	overflow: hidden;
+}
+
+#tail {
+    height: 350px;
+    width: 100%;
+    overflow: auto;
+}

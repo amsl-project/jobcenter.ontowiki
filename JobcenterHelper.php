@@ -41,6 +41,9 @@ class JobcenterHelper extends OntoWiki_Component_Helper{
         }
 
         $this->view->headScript()->appendFile($this->_config->urlBase . 'extensions/jobcenter/templates/jobcenter/js/linkfinder.js');
+        $this->view->headScript()->appendFile($this->_config->urlBase . 'extensions/jobcenter/templates/jobcenter/js/ajaxq.js');
+        $this->view->headLink()->appendStylesheet($this->_config->urlBase . 'extensions/jobcenter/templates/jobcenter/css/linkfinder.css');
+
 
     }
 }
